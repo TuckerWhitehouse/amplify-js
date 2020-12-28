@@ -32,9 +32,10 @@ const USER_AGENT_HEADER = 'x-amz-user-agent';
 
 const logger = new Logger('GraphQLAPI');
 
-export const graphqlOperation = (query, variables = {}) => ({
+export const graphqlOperation = (query, variables = {}, operationName = undefined) => ({
 	query,
 	variables,
+	operationName
 });
 
 /**
@@ -194,7 +195,7 @@ export class GraphQLAPIClass {
 	 * @returns {Promise<GraphQLResult> | Observable<object>}
 	 */
 	graphql(
-		{ query: paramQuery, variables = {}, authMode }: GraphQLOptions,
+		{ query: paramQuery, variables = {}, operationName, authMode }: GraphQLOptions,
 		additionalHeaders?: { [key: string]: string }
 	) {
 		const query =
@@ -215,7 +216,7 @@ export class GraphQLAPIClass {
 				const cancellableToken = this._api.getCancellableToken();
 				const initParams = { cancellableToken };
 				const responsePromise = this._graphql(
-					{ query, variables, authMode },
+					{ query, variables, operationName, authMode },
 					additionalHeaders,
 					initParams
 				);
@@ -226,7 +227,7 @@ export class GraphQLAPIClass {
 				return responsePromise;
 			case 'subscription':
 				return this._graphqlSubscribe(
-					{ query, variables, authMode },
+					{ query, variables, operationName, authMode },
 					additionalHeaders
 				);
 		}
@@ -235,7 +236,7 @@ export class GraphQLAPIClass {
 	}
 
 	private async _graphql(
-		{ query, variables, authMode }: GraphQLOptions,
+		{ query, variables, operationName, authMode }: GraphQLOptions,
 		additionalHeaders = {},
 		initParams = {}
 	): Promise<GraphQLResult> {
@@ -267,6 +268,7 @@ export class GraphQLAPIClass {
 		const body = {
 			query: print(query),
 			variables,
+			operationName,
 		};
 
 		const init = Object.assign(
@@ -336,7 +338,7 @@ export class GraphQLAPIClass {
 	}
 
 	private _graphqlSubscribe(
-		{ query, variables, authMode: defaultAuthenticationType }: GraphQLOptions,
+		{ query, variables, operationName, authMode: defaultAuthenticationType }: GraphQLOptions,
 		additionalHeaders = {}
 	): Observable<any> {
 		const {
@@ -357,7 +359,8 @@ export class GraphQLAPIClass {
 				apiKey,
 				query: print(query),
 				region,
-				variables,
+        variables,
+        operationName,
 				graphql_headers,
 				additionalHeaders,
 			});
